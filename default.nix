@@ -33,6 +33,7 @@ in
     cargoSha256 = metadata.cargoSha256;
 
     buildInputs = [
+      pkg-config
       libudev alsaLib
       openssl
       atk cairo glib gtk3 pango
