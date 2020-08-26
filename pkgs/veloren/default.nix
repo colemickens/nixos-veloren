@@ -1,12 +1,12 @@
 { lib, git, git-lfs, rustPlatform, fetchgit
-, pkg-config
+, pkg-config, python3
 , libudev, alsaLib
 , openssl
 , atk, cairo, glib, gtk3, pango
 }:
 
 let
-  metadata = builtins.fromJSON (builtins.readFile ./metadata.json);
+  metadata = import ./metadata.nix;
 in
   rustPlatform.buildRustPackage rec {
     pname = "veloren";
@@ -32,12 +32,17 @@ in
 
     cargoSha256 = metadata.cargoSha256;
 
+    doCheck = false;
+
+    nativeBuildInputs = [
+      pkg-config
+      python3
+    ];
+
     buildInputs = [
       pkg-config
       libudev alsaLib
       openssl
       atk cairo glib gtk3 pango
     ];
-
-    nativeBuildInputs = [ pkg-config ];
   }

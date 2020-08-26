@@ -4,6 +4,7 @@
   # TODO:
   # - use nixpkgs-mozilla's rust? seems like we want that? or just to pin?
   # - split pkgs/outputs
+  # - how to auto-update rust nightly channel too
 
   inputs = {
     nixpkgs = {
@@ -28,19 +29,25 @@
         ];
       };
     in {
+      pkgs = nixpkgs_;
       packages = forAllSystems (system: 
         let 
           pkgs = (nixpkgs_ system);
-          base = pkgs.rustChannels.nightly;
-          v = pkgs.callPackage ./default.nix {
-            rustPlatform = pkgs.recurseIntoAttrs (pkgs.makeRustPlatform {
-              cargo = base.cargo;
-              rustc = base.rust;
-            });
+          chan = pkgs.rustChannelOf {
+            rustToolchain = "${veloren.src}/rust-toolchain";
+            sha256 = "sha256-hKjJt5RAI9cf55orvwGEkOXIGOaySX5dD2aj3iQ/IDs=";
+          };
+          rustPlatform = pkgs.recurseIntoAttrs (pkgs.makeRustPlatform {
+            cargo = chan.cargo;
+            rustc = chan.rust;
+          });
+          veloren = pkgs.callPackage ./pkgs/veloren/default.nix {
+            inherit rustPlatform;
           };
         in
           {
-            veloren = v;
+            rustChannel = chan;
+            inherit veloren;
           });
     };
 }
