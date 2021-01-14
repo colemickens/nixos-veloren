@@ -1,4 +1,4 @@
-{ lib, git, git-lfs, rustPlatform, fetchgit
+{ lib, fetchgit, rustPlatform
 , pkg-config, python3
 , libudev, alsaLib
 , openssl
@@ -16,18 +16,7 @@ in
       url = metadata.repo_git;
       rev = metadata.rev;
       sha256 = metadata.sha256;
-      leaveDotGit = true;
-      postFetch = ''
-        set -e
-        set -x
-        cd $out
-        git remote -v
-        git remote add origin ${metadata.repo_git}
-        git remote update
-        export PATH=''${PATH}:${git}/bin
-        ${git-lfs}/bin/git-lfs pull
-        rm -rf .git
-      '';
+      fetchLFS = true;
     };
 
     cargoSha256 = metadata.cargoSha256;
