@@ -19,6 +19,14 @@
         overlays = [ inputs.rust-overlay.overlay ];
       };
       pkgs_ = genAttrs (builtins.attrNames inputs) (inp: genAttrs supportedSystems (sys: pkgsFor inputs."${inp}" sys));
+
+      metadata = import ./pkgs/veloren/metadata.nix;
+      velorenSrc = system: pkgs_.nixpkgs."${system}".fetchgit {
+        url = metadata.repo_git;
+        rev = metadata.rev;
+        sha256 = metadata.sha256;
+        fetchLFS = true;
+      };
     in {
       defaultPackage = forAllSystems (system:
         inputs.self.packages."${system}".veloren
@@ -27,18 +35,19 @@
       packages = forAllSystems (system:
         let
           pkgs = pkgs_.nixpkgs."${system}";
-          chan = pkgs_.nixpkgs.${system}.rust-bin.fromRustupToolchainFile
-            "${velorenPkg.src}/rust-toolchain";
+          #base = (pkgs.rust-bin.fromRustupToolchainFile "${velorenSrc system}/rust-toolchain");
+          base = (pkgs.rustChannelOf { channel = "nightly"; date = "2021-01-01"; });
+
           rustPlatform = pkgs.recurseIntoAttrs (pkgs.makeRustPlatform {
-            cargo = chan.cargo;
-            rustc = chan.rust;
+            rustc = (builtins.trace (builtins.attrNames base) base.rust);
+            cargo = base.cargo;
           });
-          velorenPkg = pkgs.callPackage ./pkgs/veloren/default.nix {
-            inherit rustPlatform;
-          };
         in
           {
-            veloren = velorenPkg;
+            veloren = pkgs.callPackage ./pkgs/veloren/default.nix {
+              rustPlatform = rustPlatform;
+              velorenSrc = (velorenSrc system);
+            };
           });
     };
 }

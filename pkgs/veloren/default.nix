@@ -1,4 +1,5 @@
 { lib, fetchgit, rustPlatform
+, velorenSrc
 , pkg-config, python3
 , libudev, alsaLib
 , openssl
@@ -12,12 +13,7 @@ in
     pname = "veloren";
     version = "${metadata.rev}";
 
-    src = fetchgit {
-      url = metadata.repo_git;
-      rev = metadata.rev;
-      sha256 = metadata.sha256;
-      fetchLFS = true;
-    };
+    src = velorenSrc;
 
     cargoSha256 = metadata.cargoSha256;
 
@@ -27,6 +23,8 @@ in
       pkg-config
       python3
     ];
+
+    VELOREN_USERDATA_STRATEGY = "system";
 
     buildInputs = [
       pkg-config
