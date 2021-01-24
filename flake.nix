@@ -2,21 +2,10 @@
   # TODO:
   # - how to auto-update rust nightly channel too
 
-
-  # Last notes:
-  # - we're waiting for this to hit nixos-unstable: https://github.com/NixOS/nixpkgs/commit/741285611f08230f44b443f0b2788dd93c4ba8d0
-
   description = "veloren";
   inputs = {
     nixpkgs.url = "github:nixos/nixpkgs/nixos-unstable";
-
-    fenix.url = "github:figsoda/fenix";
-    fenix.inputs.nixpkgs.follows = "nixpkgs";
-
-    nixpkgs-mozilla = {
-      url = "github:mozilla/nixpkgs-mozilla/master";
-      flake = false;
-    };
+    rust-overlay.url = "github:oxalica/rust-overlay";
   };
   outputs = inputs:
     let
@@ -27,7 +16,7 @@
       pkgsFor = pkgs: sys: import pkgs {
         system = sys;
         config.allowUnfree = true;
-        overlays = [(import "${inputs.nixpkgs-mozilla}/rust-overlay.nix")];
+        overlays = [ inputs.rust-overlay.overlay ];
       };
       pkgs_ = genAttrs (builtins.attrNames inputs) (inp: genAttrs supportedSystems (sys: pkgsFor inputs."${inp}" sys));
     in {
@@ -38,10 +27,8 @@
       packages = forAllSystems (system:
         let
           pkgs = pkgs_.nixpkgs."${system}";
-          chan = pkgs.rustChannelOf {
-            rustToolchain = "${veloren.src}/rust-toolchain";
-            sha256 = "sha256-hKjJt5RAI9cf55orvwGEkOXIGOaySX5dD2aj3iQ/IDs=";
-          };
+          chan = pkgs_.nixpkgs.${system}.rust-bin.fromRustupToolchainFile
+            "${velorenPkg.src}/rust-toolchain";
           rustPlatform = pkgs.recurseIntoAttrs (pkgs.makeRustPlatform {
             cargo = chan.cargo;
             rustc = chan.rust;
